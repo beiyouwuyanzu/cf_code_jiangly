@@ -4,6 +4,9 @@ import os
 import time
 
 
+start = 1
+end = 50
+
 def setDir(filepath):
     '''
     如果文件夹不存在就创建，如果文件存在就清空！
@@ -20,6 +23,9 @@ def crawl_single(url):
     # print(singe_code.text)
     code = page.xpath('//*[@id="program-source-text"]')
     # print(etree.tostring(code[0]))
+    if not code:
+        print("no code")
+        return
     code = code[0].text.replace('\n\n\n', '//ENTER').replace('\n\n', '').replace('//ENTER', '\n\n')
     detail = page.xpath('//*[@id="pageContent"]/div[2]/div[6]/table/tr[2]/td[3]')
     # print(etree.tostring(detail[0]))
@@ -34,6 +40,9 @@ def crawl_single(url):
     dr = f'./{round}'
     fname = detail + "-" + name
     print(dr, fname)
+    if os.path.exists(dr + '/' + fname + ".cpp"):
+        print("already exists, continue")
+        return
     setDir(dr)
     code = f'//url:{q_url}\n//time:{tm}\n//name:{name}\n\n{code}'
     with open(dr + '/' + fname + '.cpp', 'w') as f:
@@ -41,7 +50,7 @@ def crawl_single(url):
 
 
 
-for i in range(2, 3):
+for i in range(start, end):
 
     page_index = f"https://codeforces.com/submissions/jiangly/page/{i}"
     page_index_res = requests.get(page_index).text
@@ -52,7 +61,8 @@ for i in range(2, 3):
     tmp_page = html.xpath('//*[@id="pageContent"]/div[4]/div[6]/table/tr')
     # print(type(tmp_page[0]))
     # print(tmp_page.get('href'))
-    for x in tmp_page[9:15]:
+    for x in tmp_page:
+        #print(etree.tostring(x[0]))
         # print(x.get('href'))
         info = etree.tostring(x[0])
         sta = x[5].findall('span/span')
@@ -60,8 +70,10 @@ for i in range(2, 3):
             sta = sta[0].text.strip()
 
         if sta == "Accepted":
+            if not x[0].findall('a'):
+                continue
             hf = x[0].findall('a')[0].get('href')
             url = 'https://codeforces.com' + hf
             print(url)
             crawl_single(url)
-            time.sleep(0.5)
+            time.sleep(1)
